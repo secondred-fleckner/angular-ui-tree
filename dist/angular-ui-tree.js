@@ -17,9 +17,9 @@
       handleClass: 'angular-ui-tree-handle',
       placeholderClass: 'angular-ui-tree-placeholder',
       dragClass: 'angular-ui-tree-drag',
-      dragThreshold: 3,
       defaultCollapsed: false,
-      appendChildOnHover: true
+      appendChildOnHover: true,
+      dragMoveSensitivity: 15
     });
 
 })();
@@ -198,8 +198,8 @@
 
   angular.module('ui.tree')
 
-    .controller('TreeNodesController', ['$scope', '$element',
-      function ($scope, $element) {
+    .controller('TreeNodesController', ['$scope', '$element', '$timeout',
+      function ($scope, $element, $timeout) {
         this.scope = $scope;
 
         $scope.$element = $element;
@@ -243,22 +243,11 @@
           return $scope.$modelValue.length > 0;
         };
 
-        $scope.safeApply = function (fn) {
-          var phase = this.$root.$$phase;
-          if (phase == '$apply' || phase == '$digest') {
-            if (fn && (typeof (fn) === 'function')) {
-              fn();
-            }
-          } else {
-            this.$apply(fn);
-          }
-        };
-
         //Called in apply method of UiTreeHelper.dragInfo.
         $scope.removeNode = function (node) {
           var index = $scope.$modelValue.indexOf(node.$modelValue);
           if (index > -1) {
-            $scope.safeApply(function () {
+            $timeout(function () {
               $scope.$modelValue.splice(index, 1)[0];
             });
             return $scope.$treeScope.$callbacks.removed(node);
@@ -268,7 +257,7 @@
 
         //Called in apply method of UiTreeHelper.dragInfo.
         $scope.insertNode = function (index, nodeData) {
-          $scope.safeApply(function () {
+          $timeout(function () {
             $scope.$modelValue.splice(index, 0, nodeData);
           });
         };
@@ -1091,8 +1080,15 @@
                     prev = dragInfo.prev();
                     if (prev && !prev.collapsed
                       && prev.accept(scope, prev.childNodesCount())) {
-                      prev.$childNodesScope.$element.append(placeElm);
-                      dragInfo.moveTo(prev.$childNodesScope, prev.childNodes(), prev.childNodesCount());
+                      if (!dragInfo.deltaDistX || dragInfo.deltaDistX < 0) {
+                        dragInfo.deltaDistX = 0;
+                      }
+                      dragInfo.deltaDistX += pos.distX;
+                      if (dragInfo.deltaDistX > config.dragMoveSensitivity) {
+                        prev.$childNodesScope.$element.append(placeElm);
+                        dragInfo.moveTo(prev.$childNodesScope, prev.childNodes(), prev.childNodesCount());
+                        dragInfo.deltaDistX = 0;
+                      }
                     }
                   }
 
@@ -1105,8 +1101,15 @@
                       target = dragInfo.parentNode(); // As a sibling of it's parent node
                       if (target
                         && target.$parentNodesScope.accept(scope, target.index() + 1)) {
-                        target.$element.after(placeElm);
-                        dragInfo.moveTo(target.$parentNodesScope, target.siblings(), target.index() + 1);
+                          if (!dragInfo.deltaDistX || dragInfo.deltaDistX > 0) {
+                            dragInfo.deltaDistX = 0;
+                          }
+                          dragInfo.deltaDistX += pos.distX;
+                          if (dragInfo.deltaDistX < -config.dragMoveSensitivity) {
+                            target.$element.after(placeElm);
+                            dragInfo.moveTo(target.$parentNodesScope, target.siblings(), target.index() + 1);
+                            dragInfo.deltaDistX = 0;
+                          }
                       }
                     }
                   }

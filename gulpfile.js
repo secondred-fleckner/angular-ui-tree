@@ -15,18 +15,16 @@ var gulp       = require('gulp'),
 
 $.karma = require('karma');
 
-gulp.task('build', ['clean'], function () {
-  return gulp.start('styles', 'styles:copy-source', 'jscs', 'jshint', 'uglify', 'test');
-});
+gulp.task('build', gulp.series('clean', 'styles', 'styles:copy-source', 'jscs', 'jshint', 'uglify'));
 
-gulp.task('deploy', ['clean:deploy'], function () {
-  return gulp.start('website');
-});
+gulp.task('deploy', gulp.series('clean:deploy', function () {
+  return gulp.series('website');
+}));
 
 gulp.task('serve', function () {
-  return gulp.start('connect', 'watch', 'open');
+  return gulp.series('connect', 'watch', 'open');
 });
 
 gulp.task('test', function () {
-  return gulp.start('karma');
+  return gulp.series('karma');
 });

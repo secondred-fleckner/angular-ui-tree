@@ -34,14 +34,12 @@ module.exports = function (gulp, $) {
       .pipe(gulp.dest('dist'));
   });
 
-  gulp.task('uglify', ['concat'], function () {
+  gulp.task('uglify', gulp.series('concat', function () {
     return gulp.src('dist/angular-ui-tree.js')
-      .pipe($.uglify({
-        preserveComments: 'some'
-      }))
+      .pipe($.uglify())
       .pipe($.rename('angular-ui-tree.min.js'))
       .pipe(gulp.dest('dist'));
-  });
+  }));
 
   gulp.task('karma', function () {
     var server = new $.karma.Server({

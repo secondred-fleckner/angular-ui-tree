@@ -2,11 +2,19 @@
 
 module.exports = function (gulp, $) {
 
-  gulp.task('connect', [
-    'clean:examples',
-    'scripts:setup',
-    'styles'
-  ], function () {
+  gulp.task('styles:copy-source', function () {
+    return gulp.src('source/*.css')
+        .pipe(gulp.dest('dist'));
+  });
+
+  gulp.task('styles', function () {
+    return gulp.src('source/*.css')
+        .pipe($.cssnano({ safe: true }))
+        .pipe($.rename('angular-ui-tree.min.css'))
+        .pipe(gulp.dest('dist'));
+  });
+
+  gulp.task('connect', gulp.series('clean:examples', 'scripts:setup', 'styles', async function () {
     var livereloadPort = 35729;
 
     $.connect.server({
@@ -29,9 +37,9 @@ module.exports = function (gulp, $) {
         ];
       }
     });
-  });
+  }));
 
-  gulp.task('watch', ['connect'], function () {
+  gulp.task('watch', gulp.series('connect', async function () {
     gulp.watch([
       '.jshintrc',
       'source/**/*.js',
@@ -53,10 +61,10 @@ module.exports = function (gulp, $) {
     gulp.watch([
       'examples/**/*.scss'
     ], ['styles:examples']);
-  });
+  }));
 
-  gulp.task('open', ['connect'], function () {
+  gulp.task('open', gulp.series('connect', async function () {
     require('open')('http://localhost:9000');
-  });
+  }));
 
 };

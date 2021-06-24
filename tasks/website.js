@@ -17,9 +17,9 @@ module.exports = function (gulp, $) {
       .pipe(gulp.dest('.tmp/website/source'));
   });
 
-  gulp.task('website', ['website:prepareBase', 'website:prepareSource'], function () {
+  gulp.task('website', gulp.series('website:prepareBase', 'website:prepareSource', function () {
     return gulp.src('.tmp/website/**/*')
       .pipe($.ghPages());
-  });
+  }));
 
 };
